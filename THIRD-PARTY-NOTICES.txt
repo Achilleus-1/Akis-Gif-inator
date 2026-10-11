@@ -1,0 +1,52 @@
+Aki's Gif-inator — third-party notices
+
+Original application code: Copyright (c) 2026 Achilleus.
+Licensed under GPL-3.0-or-later; see LICENSE. Each dependency retains its own
+license and copyright. Achilleus logos identify this project; the code license
+does not grant trademark rights. No Apple artwork, fonts or proprietary shader
+code is included. The project is independent of Apple, NVIDIA, Qt and FFmpeg.
+
+The Aero environment and glass-lens formulas in glass.py adapt the MIT-licensed
+liquid-glass.js in Aki's Rockbox Scrobbler, Copyright (c) 2026 Achilleus.
+Original source: https://github.com/Achilleus-1/Akis-Rockbox-Scrobbler
+Permission notice: licenses/Rockbox-Scrobbler-MIT.txt.
+
+Python 3.12.2: Python Software Foundation License and historical notices.
+Full notice: licenses/Python-LICENSE.txt.
+Source: https://www.python.org/downloads/release/python-3122/
+
+PySide6 / Shiboken6 / Qt 6.10.2: GPLv3 / LGPLv3 / commercial options as
+specified by the respective modules. This GPL application uses the open-source
+terms. No commercial Qt license is asserted. The application uses Qt Core,
+Gui, Widgets, Multimedia, MultimediaWidgets and OpenGL, not Qt WebEngine.
+Sources and module licensing:
+https://code.qt.io/cgit/pyside/pyside-setup.git/tag/?h=v6.10.2
+https://code.qt.io/cgit/qt/qtbase.git/tag/?h=v6.10.2
+https://code.qt.io/cgit/qt/qtmultimedia.git/tag/?h=v6.10.2
+https://doc.qt.io/qtforpython-6/licenses.html
+The installed Qt wheels contain additional native libraries and third-party
+components. Their corresponding licenses and sources must be inventoried for
+any redistributed binary; this document does not replace that work.
+
+PyInstaller 6.22.3: GPLv2 with the bootloader exception permitting distribution
+of bundled applications under their own licenses.
+Full text and exception: licenses/PyInstaller-COPYING.txt.
+Source: https://github.com/pyinstaller/pyinstaller/tree/v6.22.3
+
+FFmpeg / FFprobe: the local private build uses GPLv3-compatible configuration
+with --enable-gpl and --enable-version3, without --enable-nonfree.
+Local version: N-122487-g43dbc011fa-20260119. The FFmpeg license text is in
+assets/FFmpeg-LICENSE.txt. Its many enabled libraries have their own terms.
+FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/43dbc011fa
+Licensing: https://ffmpeg.org/legal.html
+FFmpeg is a separate subprocess; local binaries are not included in the public
+source ZIP or Git repository. A link to FFmpeg alone is not a complete offer
+of corresponding source for that dependency-rich binary build.
+
+NVIDIA NVDEC: accessed through FFmpeg and the user's installed NVIDIA driver.
+No NVIDIA driver, CUDA toolkit or proprietary Apple component is redistributed.
+
+Public 1.0.0 distribution is SOURCE ONLY. Build scripts can produce a local
+self-contained executable. Publishing that executable requires exact dependency
+notices, complete corresponding source and build instructions, including enabled
+FFmpeg libraries and bundled Qt dependencies. See docs/DISTRIBUTION.md.
