@@ -4,7 +4,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 FILES = (
     '.gitignore', '.gitattributes', 'app.py', 'converter.py', 'desktop.py',
     'glass.py', 'build.py', 'requirements.txt', 'Start.bat',
@@ -27,5 +27,6 @@ FILES = (
     'tools/build_installer.py', 'licenses/InnoSetup-LICENSE.txt',
     'tests/test_theme.py', 'docs/images/preview-dark.png',
     'docs/releases/1.1.0.md',
+    'docs/releases/1.2.0.md',
     'launcher/Launcher.cs',
 )

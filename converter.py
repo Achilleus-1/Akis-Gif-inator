@@ -23,6 +23,8 @@ CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 PROFILES = {
     "compact": ("Compact · 480px · 15 fps", 480, 15, "bayer"),
     "balanced": ("Balanced · 720px · 15 fps", 720, 15, "bayer"),
+    "smooth": ("Smooth · 720px · 20 fps", 720, 20, "sierra2_4a"),
+    "sharp": ("Sharp · 960px · 15 fps", 960, 15, "sierra2_4a"),
     "detail": ("Extra detail · 960px · 20 fps", 960, 20, "sierra2_4a"),
     "high": ("High · 1280px · 24 fps", 1280, 24, "sierra2_4a"),
     "very_high": ("Much higher · 1920px · 30 fps", 1920, 30, "sierra2_4a"),

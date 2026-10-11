@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 — 2026-10-11
+
+- Add Smooth (720px / 20 fps) and Sharp (960px / 15 fps) detail presets with Sierra dithering.
+- Preserve the existing presets, High default, source limits and optional size fitting.
+- Verify both presets with real GIF exports and include them in packaged smoke checks.
+
 ## 1.1.0 — 2026-10-10
 
 - Add remembered Dark mode for native controls, previews, timeline and live/still glass.

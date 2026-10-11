@@ -139,6 +139,40 @@ class ConversionTests(unittest.TestCase):
         job = self.export(source, profile='very_high', auto_fit=False)
         self.assertEqual(job['status'],'done',job)
         self.assertEqual((job['result']['width'],job['result']['height'],job['result']['fps']),(960,540,24))
+    def test_smooth_and_sharp_export_selected_dimensions_and_frame_rates(self):
+        source = self.engine.load_video(self.mp4)
+        for profile, dimensions, fps in [('smooth', (720,406), 20), ('sharp', (960,540), 15)]:
+            with self.subTest(profile=profile):
+                job = self.export(source, start=0, end=1, profile=profile, auto_fit=False)
+                self.assertEqual(job['status'], 'done', job)
+                result = job['result']
+                self.assertEqual((result['width'], result['height']), dimensions)
+                self.assertEqual(result['fps'], fps)
+                self.assertEqual(result['profile'], profile)
+                self.assertEqual(result['dither'], 'sierra2_4a')
+                measured = self.engine.probe(Path(result['path']))
+                # GIF delays use hundredths of a second; FFprobe's nominal
+                # rate can reflect the shortest delay rather than the average.
+                counted = subprocess.run([self.engine.ffprobe, '-v', 'error', '-count_frames',
+                                          '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_frames',
+                                          '-of', 'json', result['path']], check=True, capture_output=True,
+                                         creationflags=CREATE_NO_WINDOW)
+                frames = int(json.loads(counted.stdout)['streams'][0]['nb_read_frames'])
+                self.assertEqual(frames, fps)
+                self.assertAlmostEqual(measured['duration'], 1, delta=0.1)
+    def test_smooth_and_sharp_respect_smaller_slower_sources(self):
+        fixture = self.root / 'small-slow.mp4'
+        subprocess.run([self.engine.ffmpeg, '-v', 'error', '-y', '-f', 'lavfi', '-i',
+                        'testsrc2=size=320x180:rate=10', '-t', '1', '-c:v', 'libx264',
+                        '-pix_fmt', 'yuv420p', str(fixture)], check=True, capture_output=True,
+                       creationflags=CREATE_NO_WINDOW)
+        source = self.engine.load_video(fixture)
+        for profile in ('smooth', 'sharp'):
+            with self.subTest(profile=profile):
+                job = self.export(source, start=0, end=1, profile=profile, auto_fit=False)
+                self.assertEqual(job['status'], 'done', job)
+                self.assertEqual((job['result']['width'], job['result']['height'], job['result']['fps']),
+                                 (320,180,10))
     def test_high_quality_explicit_auto_fit_reduces_detail_truthfully(self):
         source = self.engine.load_video(self.hd)
         job = self.export(source, start=0, end=0.6, profile='high', auto_fit=True, target_mb=0.25)
@@ -201,6 +235,19 @@ class TimelineTests(unittest.TestCase):
         self.bar = TrimBar(); self.bar.resize(600, 115); self.bar.set_video(120); self.bar.show(); self.qt.processEvents()
     def tearDown(self):
         self.bar.close()
+    def test_new_presets_are_selectable_and_high_remains_default(self):
+        with tempfile.TemporaryDirectory() as temp:
+            window = Window(App(Path(temp)))
+            try:
+                self.assertEqual(window.detail.currentData(), 'high')
+                for profile, label in [('smooth', 'Smooth · 720px · 20 fps'),
+                                       ('sharp', 'Sharp · 960px · 15 fps')]:
+                    index = window.detail.findData(profile)
+                    self.assertGreaterEqual(index, 0)
+                    window.detail.setCurrentIndex(index)
+                    self.assertEqual(window.detail.currentText(), label)
+            finally:
+                window.close()
     def test_full_video_initial_selection_and_clamps(self):
         self.assertEqual((self.bar.start, self.bar.end), (0, 120))
         self.bar.set_selection(-9, 999)

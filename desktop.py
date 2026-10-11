@@ -27,7 +27,7 @@ from converter import App, ROOT, CREATE_NO_WINDOW, PROFILES
 from glass import AeroBackdrop, GlassPanel
 
 APP_NAME = "Aki's Gif-inator"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 ASSETS = Path(getattr(sys, "_MEIPASS", ROOT)) / "assets"
 
 
@@ -636,6 +636,24 @@ def smoke_test(output: Path, use_gpu=False):
         engine.jobs[job["id"]]["thread"].join(60)
         final = engine.public_job(engine.jobs[job["id"]])
         final.update(ffmpeg=engine.ffmpeg, ffprobe=engine.ffprobe, frozen=bool(getattr(sys, "frozen", False)))
+        final['version'] = VERSION
+        # Exercise the new presets inside the installed/frozen app as well.
+        subprocess.run([engine.ffmpeg, "-v", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "testsrc2=size=960x540:rate=24", "-t", "1", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(fixture)], check=True, capture_output=True, creationflags=CREATE_NO_WINDOW)
+        source = engine.load_video(fixture)
+        final['presets'] = {}
+        for profile, expected in [('smooth', (720, 406, 20)), ('sharp', (960, 540, 15))]:
+            job = engine.start_job({"upload_id": source["id"], "start": 0, "end": 1, "target_mb": 4, "profile": profile, "auto_fit": False, "use_gpu": use_gpu})
+            engine.jobs[job['id']]['thread'].join(60)
+            checked = engine.public_job(engine.jobs[job['id']])
+            result = checked.get('result', {})
+            if checked['status'] != 'done' or (result.get('width'), result.get('height'), result.get('fps')) != expected:
+                raise RuntimeError(f'{profile} preset smoke check failed: {checked}')
+            measured = engine.probe(Path(result['path']))
+            counted = subprocess.run([engine.ffprobe, '-v', 'error', '-count_frames', '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_frames', '-of', 'json', result['path']], check=True, capture_output=True, creationflags=CREATE_NO_WINDOW)
+            frames = int(json.loads(counted.stdout)['streams'][0]['nb_read_frames'])
+            if frames != expected[2] or abs(measured['duration'] - 1) > 0.1:
+                raise RuntimeError(f'{profile} GIF timing smoke check failed: {measured}')
+            final['presets'][profile] = result
         # Exercise the packaged Qt OpenGL modules without opening a window.
         from glass import GlassRenderer
         qt = QApplication.instance() or QApplication([])

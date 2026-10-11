@@ -30,7 +30,7 @@ optional NVIDIA hardware decoding. Files stay on your computer.
 
 ## Install on Windows
 
-1. Open [Releases](https://github.com/Achilleus-1/Akis-Gif-inator/releases/latest) and download `Akis-Gif-inator-1.1.0-windows-x64-setup.exe`.
+1. Open [Releases](https://github.com/Achilleus-1/Akis-Gif-inator/releases/latest) and download `Akis-Gif-inator-1.2.0-windows-x64-setup.exe`.
 2. Run Setup. It installs for your user account, creates a Start menu shortcut, and can add a desktop shortcut. No administrator account or manual Python commands are needed.
 3. Launch **Aki's Gif-inator** from the shortcut. Uninstall through Windows Installed apps.
 
@@ -64,9 +64,14 @@ Text already visible in the video remains part of the frames.
 | --- | --- | --- |
 | Compact | 480px | 15 fps |
 | Balanced | 720px | 15 fps |
+| Smooth | 720px | 20 fps |
+| Sharp | 960px | 15 fps |
 | Extra detail | 960px | 20 fps |
 | High (default) | 1280px | 24 fps |
 | Much higher | 1920px | 30 fps |
+
+Smooth favors motion at 720px; Sharp favors finer detail at a lower frame rate.
+Both use Sierra dithering, like Extra detail and the higher presets.
 
 The default is High, a 25 MB target, and Auto-fit size off. Keep fitting off to
 preserve readable detail; shorten the clip when it is too large. Turn it on to

@@ -41,8 +41,10 @@ still work. The preview is muted; audio is not present in GIF output.
 
 High is the default: up to 1280px on the longest edge and 24 fps. Much higher
 offers up to 1920px and 30 fps. Neither dimensions nor frame rate exceed the
-source's measured values. Extra detail and above use Sierra dithering; Compact
-and Balanced use Bayer dithering. GIF color palettes contain at most 256 colors.
+source's measured values. Smooth offers 720px at 20 fps for motion; Sharp offers
+960px at 15 fps for finer detail with fewer frames. Smooth, Sharp, Extra detail
+and the higher presets use Sierra dithering; Compact and Balanced use Bayer
+dithering. GIF color palettes contain at most 256 colors.
 
 Choose your destination's size budget. With Auto-fit size off, the app preserves
 your selected detail and warns if the measured GIF exceeds the target. With it
