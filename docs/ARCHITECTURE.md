@@ -10,6 +10,11 @@
   or WebEngine. The video widget is not placed inside an OpenGL widget.
 - `build.py`: local single-file PyInstaller build with the runtime, FFmpeg,
   branding and license notices.
+- `installer/setup.iss`: standard per-user Inno Setup installer, shortcuts and uninstall.
+- `installer/Install-Runtime.ps1`: publisher-only downloads, pinned SHA-256 checks,
+  safe archive extraction and a private runtime; never changes system Python/PATH.
+- `installer/dependencies.json`: reviewed versions, URLs and publisher hashes.
+- `tools/build_installer.py`: copies an explicit project-only payload into Setup.
 - `tools/package_release.py`: reviewed file allowlist for source ZIPs.
 - `tools/check_release.py`: data/credential/path checks on publishable files.
 
@@ -31,6 +36,9 @@ selection. Pointer/click data are only transient visual state. A graphics failur
 stops the renderer and uses ordinary painter gradients. Controls keep native
 input handling and readable focus indicators in either mode.
 
-The public repository and 1.0.0 release contain application source and authored
-assets only. They exclude binaries, build paths, test outputs and source videos.
-See [distribution requirements](DISTRIBUTION.md) before distributing executables.
+The public repository contains source and authored assets. Versioned binaries
+and checksums belong in GitHub Releases. The setup EXE embeds the app's source;
+it obtains Python/Qt/FFmpeg directly from upstream at install time. The release
+workflow tests install, isolated-PATH export and uninstall before publication.
+A locally saved QSettings boolean controls the dark theme and shader uniform.
+[Distribution model](DISTRIBUTION.md).

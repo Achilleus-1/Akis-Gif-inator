@@ -13,7 +13,7 @@ import sys
 import threading
 import traceback
 
-from PySide6.QtCore import Qt, Signal, QObject, QTimer, QUrl, QRectF, QSize
+from PySide6.QtCore import Qt, Signal, QObject, QTimer, QUrl, QRectF, QSize, QSettings
 from PySide6.QtGui import QColor, QPainter, QPen, QImage, QPixmap, QMovie, QDesktopServices, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -27,7 +27,7 @@ from converter import App, ROOT, CREATE_NO_WINDOW, PROFILES
 from glass import AeroBackdrop, GlassPanel
 
 APP_NAME = "Aki's Gif-inator"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 ASSETS = Path(getattr(sys, "_MEIPASS", ROOT)) / "assets"
 
 
@@ -94,7 +94,8 @@ class TrimBar(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.area()
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor("#d4e7ef"))
+        dark = bool(self.property('dark'))
+        p.setBrush(QColor("#193549" if dark else "#d4e7ef"))
         p.drawRoundedRect(rect, 7, 7)
         p.save()
         p.setClipRect(rect)
@@ -120,7 +121,7 @@ class TrimBar(QWidget):
             play = self.x_for(self.position)
             p.setPen(QPen(QColor("#ffffff"), 2))
             p.drawLine(int(play), 12, int(play), 83)
-        p.setPen(QColor("#52758a"))
+        p.setPen(QColor("#b5d9e7" if dark else "#52758a"))
         font = p.font(); font.setPointSize(8); p.setFont(font)
         p.drawText(QRectF(14, 86, 100, 22), Qt.AlignmentFlag.AlignLeft, time_label(0))
         p.drawText(QRectF(14, 86, rect.width(), 22), Qt.AlignmentFlag.AlignRight, time_label(self.duration))
@@ -185,7 +186,7 @@ class GifPreview(QLabel):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimumSize(240, 200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setStyleSheet("background:rgba(242,251,255,150); border:1px solid rgba(255,255,255,220); border-radius:16px; color:#52758a;")
+        self.setObjectName('gifPreview')
         self.animation = None
         self.original = QSize()
 
@@ -246,11 +247,36 @@ QCheckBox:focus { color:#007ba7; }
 QProgressBar { border:0; background:#c9e4ed; border-radius:3px; max-height:6px; }
 QProgressBar::chunk { background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #2ab6d0,stop:1 #91d8b5); border-radius:3px; }
 QToolTip { background:#f1fbff; color:#174b65; border:1px solid #8abacb; padding:5px; }
+QLabel#gifPreview, QLabel#sourceFallback { background:rgba(242,251,255,150); border:1px solid rgba(255,255,255,220); border-radius:16px; color:#52758a; }
+"""
+
+DARK_STYLE = """
+QMainWindow { background:#101e30; }
+QWidget { color:#dceff7; }
+QLabel#headline, QLabel#heading { color:#ecfaff; }
+QLabel#muted { color:#b5d0df; }
+QLabel#pill { color:#c0e9f5; background:rgba(19,47,68,190); border-color:#426b80; }
+QLabel#notice { color:#ffe2a2; background:rgba(67,51,27,240); border-color:#a48a4e; }
+QPushButton { color:#def6ff; border-color:#456b80; background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #254b63,stop:1 #172e44); }
+QPushButton:hover { border-color:#65cfdf; background:#28536a; }
+QPushButton:pressed { background:#102f43; }
+QPushButton:disabled { color:#8296a4; background:rgba(25,43,61,140); border-color:#354b5c; }
+QPushButton#drop { background:rgba(12,30,47,120); color:#b7dce9; border-color:#426b80; }
+QPushButton#primary:disabled { background:#244558; color:#819da9; border-color:#3e6478; }
+QDoubleSpinBox, QComboBox { color:#e5f6ff; background:#152b40; border-color:#446b80; }
+QDoubleSpinBox:disabled { color:#718c9a; }
+QComboBox QAbstractItemView { color:#e5f6ff; background:#152b40; selection-background-color:#27627a; selection-color:white; border-color:#446b80; }
+QCheckBox::indicator:unchecked { background:#142b3e; border-color:#6590a3; }
+QCheckBox::indicator:checked { background:#0aa9c9; border-color:#68cfdf; }
+QCheckBox:focus { color:#76e0ee; }
+QProgressBar { background:#253d50; }
+QToolTip { background:#153148; color:#e2f4fc; border-color:#537f93; }
+QLabel#gifPreview, QLabel#sourceFallback { background:rgba(9,24,40,160); color:#b5d0df; border-color:#426b80; }
 """
 
 
 class Window(QMainWindow):
-    def __init__(self, engine=None):
+    def __init__(self, engine=None, settings=None):
         super().__init__()
         self.engine = engine or App()
         self.source = self.result = None
@@ -259,6 +285,7 @@ class Window(QMainWindow):
         self.generation = 0
         self.closing = False
         self.preview_primed = False
+        self.settings = settings or QSettings('Achilleus', 'Akis-Gif-inator')
         self.bridge = Bridge(self)
         self.bridge.loaded.connect(self.loaded)
         self.bridge.thumbs.connect(self.thumbnails_ready)
@@ -281,6 +308,8 @@ class Window(QMainWindow):
         self.player.errorOccurred.connect(self.preview_error)
         self.player.mediaStatusChanged.connect(self.media_status)
         self.build_ui()
+        self.dark_mode.setChecked(self.settings.value('appearance/dark', False, type=bool))
+        self.apply_theme(self.dark_mode.isChecked(), persist=False)
         self.poll_timer = QTimer(self)
         self.poll_timer.setInterval(150)
         self.poll_timer.timeout.connect(self.poll)
@@ -297,6 +326,8 @@ class Window(QMainWindow):
         header = GlassPanel(base,dark=True); top = QHBoxLayout(header); top.setContentsMargins(20,13,24,13); top.setSpacing(14)
         logo = QLabel(); logo.setFixedSize(52,52); logo.setPixmap(QPixmap(str(ASSETS / "branding" / "achilleus-white.png")).scaled(52,52,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)); top.addWidget(logo)
         wordmark = QVBoxLayout(); wordmark.setSpacing(3); wordmark.addWidget(self.label(APP_NAME,"brand")); wordmark.addWidget(self.label("PRODUCT OF ACHILLEUS  ·  YOUR LOCAL GIF DESK","brandCredit")); top.addLayout(wordmark); top.addStretch()
+        self.dark_mode = QCheckBox('Dark mode'); self.dark_mode.setToolTip('Switch between light Aero and dark glass. Saved locally on this computer.')
+        self.dark_mode.toggled.connect(self.apply_theme); top.addWidget(self.dark_mode)
         self.live_glass = QCheckBox("Live glass"); self.live_glass.setChecked(True); self.live_glass.setToolTip("Local liquid-glass reflections and ripples. Turn off for a still Aero background. Animation pauses when this window is inactive or minimized.")
         self.live_glass.toggled.connect(base.set_live); base.availabilityChanged.connect(self.glass_available); top.addWidget(self.live_glass); outer.addWidget(header)
         intro = QHBoxLayout(); intro.addWidget(self.label("Drop it. Trim it. GIF it.", "headline")); intro.addStretch(); intro.addWidget(self.label("MP4 / MKV  →  GIF   ·   ALL LOCAL","pill")); outer.addLayout(intro)
@@ -308,7 +339,7 @@ class Window(QMainWindow):
         self.source_stack = QStackedWidget()
         self.drop = QPushButton("Drop an MP4 or MKV here\n\nor click to browse"); self.drop.setObjectName("drop"); self.drop.setMinimumHeight(80); self.drop.clicked.connect(self.choose)
         self.source_stack.addWidget(self.drop); self.source_stack.addWidget(self.video)
-        self.fallback = QLabel("Preview unavailable. You can still trim and export this video."); self.fallback.setWordWrap(True); self.fallback.setAlignment(Qt.AlignmentFlag.AlignCenter); self.fallback.setStyleSheet("background:rgba(239,250,255,160);border:1px solid white;border-radius:16px;color:#52758a;")
+        self.fallback = QLabel("Preview unavailable. You can still trim and export this video."); self.fallback.setWordWrap(True); self.fallback.setAlignment(Qt.AlignmentFlag.AlignCenter); self.fallback.setObjectName('sourceFallback')
         self.source_stack.addWidget(self.fallback); sl.addWidget(self.source_stack, 1)
         self.file_name = self.label("MP4 / MKV · original files stay untouched"); self.file_name.setWordWrap(True); sl.addWidget(self.file_name)
         preview_controls = QHBoxLayout()
@@ -361,6 +392,11 @@ class Window(QMainWindow):
         self.device_info = self.label("Export: CPU decode · CPU GIF encode")
         self.device_info.setToolTip("Shows the actual decoder used for the current or last export. With NVIDIA GPU decoding checked, try NVDEC and fall back to CPU if needed. GIF encoding and filters use CPU. Video preview has its own playback device.")
         footer.addWidget(self.device_info); outer.addLayout(footer)
+
+    def apply_theme(self, dark, persist=True):
+        self.setStyleSheet(STYLE + (DARK_STYLE if dark else ''))
+        self.backdrop.set_dark(dark); self.timeline.setProperty('dark', dark); self.timeline.update()
+        if persist: self.settings.setValue('appearance/dark', bool(dark))
 
     def glass_available(self, available):
         if not available:
@@ -609,7 +645,15 @@ def smoke_test(output: Path, use_gpu=False):
             frame = renderer.draw(640, 480, 1., [320., 240., 1.], [0., 0., 0., 0.],
                                   [QRectF(20, 20, 600, 70), QRectF(20, 110, 290, 270),
                                    QRectF(330, 110, 290, 270), QRectF(20, 400, 600, 60)]) if available else QImage()
-            final['glass'] = {'available': available, 'rendered': not frame.isNull(), 'error': renderer.error}
+            dark_rendered = False
+            if available:
+                renderer.dark = True
+                dark_frame = renderer.draw(640, 480, 1., [320., 240., 1.], [0., 0., 0., 0.],
+                                          [QRectF(20, 20, 600, 70), QRectF(20, 110, 290, 270),
+                                           QRectF(330, 110, 290, 270), QRectF(20, 400, 600, 60)])
+                dark_rendered = not dark_frame.isNull() and dark_frame.pixelColor(5, 5).lightness() < frame.pixelColor(5, 5).lightness()
+                if not dark_rendered: raise RuntimeError('Dark glass shader did not change the rendered pixels.')
+            final['glass'] = {'available': available, 'rendered': not frame.isNull(), 'dark_rendered': dark_rendered, 'error': renderer.error}
         finally:
             renderer.close()
         output.write_text(json.dumps(final, indent=2), encoding="utf-8")

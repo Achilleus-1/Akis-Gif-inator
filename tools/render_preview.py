@@ -2,12 +2,13 @@
 # Copyright (c) 2026 Achilleus
 """Render the documentation preview using original, generated demonstration media."""
 import math
+import argparse
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from PySide6.QtCore import Qt, QRectF, QCoreApplication, QEvent
+from PySide6.QtCore import Qt, QRectF, QCoreApplication, QEvent, QSettings
 from PySide6.QtGui import QColor, QFont, QImage, QLinearGradient, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication
 from converter import App, CREATE_NO_WINDOW
@@ -34,6 +35,7 @@ def demonstration(index):
 
 
 def main():
+    parser = argparse.ArgumentParser(); parser.add_argument('--dark', action='store_true'); args = parser.parse_args()
     qt = QApplication.instance() or QApplication([])
     with tempfile.TemporaryDirectory(prefix='gif-inator-preview-') as temp:
         root = Path(temp); engine = App(root / 'exports'); window = None
@@ -50,7 +52,8 @@ def main():
             if final['status'] != 'done':
                 raise RuntimeError(final.get('error', final['status']))
             result = final['result']
-            window = Window(engine); window.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
+            preferences = QSettings(str(root / 'appearance.ini'), QSettings.Format.IniFormat)
+            window = Window(engine, settings=preferences); window.dark_mode.setChecked(args.dark); window.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
             window.resize(1100, 850); window.source = source; window.result = result
             window.timeline.set_video(source['duration'])
             window.timeline.images = [demonstration(i).scaled(160, 90) for i in range(0, 72, 9)]
@@ -64,7 +67,7 @@ def main():
             window.status.setText('Saved locally to exports/'); window.controls(); window.show(); qt.processEvents()
             window.backdrop.elapsed = 5.; window.backdrop.pointer = [820., 220., 1.]
             window.backdrop.tick(force=True); qt.processEvents()
-            destination = Path(__file__).resolve().parents[1] / 'docs' / 'images' / 'preview.png'
+            destination = Path(__file__).resolve().parents[1] / 'docs' / 'images' / ('preview-dark.png' if args.dark else 'preview.png')
             destination.parent.mkdir(parents=True, exist_ok=True)
             window.grab().save(str(destination))
             print(f'Preview rendered; live shader: {window.backdrop.available}')

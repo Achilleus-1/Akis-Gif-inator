@@ -1,0 +1,72 @@
+name: Windows release build
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  native_checks:
+    uses: ./.github/workflows/checks.yml
+  installer:
+    needs: native_checks
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install build compiler
+        shell: pwsh
+        run: choco upgrade innosetup --version=6.7.3 --yes --no-progress
+      - name: Review source and create packages
+        shell: pwsh
+        run: |
+          python tools/check_release.py
+          python tools/package_release.py
+          python tools/build_installer.py --iscc 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      - name: Install and verify in a clean runtime
+        shell: pwsh
+        run: |
+          $taskTarget = Join-Path $env:RUNNER_TEMP 'Gif-inator install test'
+          $taskSetup = Get-ChildItem dist -Filter '*-setup.exe' | Select-Object -First 1
+          $taskProcess = Start-Process -FilePath $taskSetup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/ForceFFmpeg=1',('/DIR="'+$taskTarget+'"') -Wait -PassThru
+          if ($taskProcess.ExitCode -ne 0) { throw 'Installer verification failed' }
+          $taskOriginalPath = $env:PATH
+          try {
+            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+            $taskLauncher = Start-Process -FilePath (Join-Path $taskTarget 'Akis-Gif-inator.exe') -ArgumentList '--smoke-test',('"'+(Join-Path $taskTarget 'smoke.json')+'"') -Wait -PassThru
+            if ($taskLauncher.ExitCode -ne 0) { throw 'Installed conversion failed' }
+          } finally { $env:PATH = $taskOriginalPath }
+          $taskShortcut = Join-Path ([Environment]::GetFolderPath('StartMenu')) "Programs\Aki's Gif-inator\Aki's Gif-inator.lnk"
+          if (-not (Test-Path -LiteralPath $taskShortcut)) { throw 'Start menu shortcut missing' }
+          $taskUninstall = Start-Process -FilePath (Join-Path $taskTarget 'unins000.exe') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($taskUninstall.ExitCode -ne 0) { throw 'Uninstall verification failed' }
+          if (-not (Test-Path (Join-Path $taskTarget 'smoke-exports'))) { throw 'Uninstall removed user exports' }
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -File | ForEach-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower() + '  ' + $_.Name } | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-release
+          path: dist/*
+          if-no-files-found: error
+      - name: Publish versioned release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $taskTag = $env:GITHUB_REF_NAME
+          $taskVersion = python -c "import sys; sys.path.insert(0,'tools'); from release_files import VERSION; print(VERSION)"
+          if ($taskTag -ne "v$taskVersion") { throw 'Release tag does not match source version' }
+          gh release view $taskTag --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { gh release create $taskTag --repo $env:GITHUB_REPOSITORY --verify-tag --title "Aki's Gif-inator $taskVersion" --notes-file "docs/releases/$taskVersion.md" }
+          if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
+          $taskAssets = Get-ChildItem dist -File | ForEach-Object { $_.FullName }
+          gh release upload $taskTag @taskAssets --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

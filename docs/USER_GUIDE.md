@@ -5,11 +5,23 @@ and MKV videos to animated GIFs. It never uploads the video.
 
 ## Launch
 
-For a configured source checkout, use `Start Akis Gif-inator.cmd`, or run
-`python app.py` from an environment with the pinned requirements and FFmpeg on
-PATH. A locally built `Akis-Gif-inator.exe` needs no separately installed Python
-or FFmpeg. Keep the executable in a writable folder so exports can be saved.
-The public source ZIP does not contain the executable or dependencies.
+Download the Windows setup EXE from GitHub Releases. Setup creates a Start menu
+shortcut, offers a desktop shortcut and an uninstall entry. It downloads and
+verifies a private runtime during installation; no manual Python setup is needed.
+FFmpeg is reused from PATH or downloaded when its setup task is selected.
+The installed app works offline. Uninstall preserves the exports folder.
+
+For a source checkout, use `Start Akis Gif-inator.cmd` or `python app.py` with
+the requirements and FFmpeg installed. A personal `build.py` executable bundles
+its dependencies; that file is not the official setup EXE.
+
+## Appearance
+
+Use **Dark mode** in the header to switch between light Aero and dark glass.
+The choice is saved locally on this PC and restored next launch. It covers
+controls, the timeline, previews and both the live and still glass backgrounds.
+Live glass can be disabled separately; neither switch changes export quality
+or which device decodes a video.
 
 ## Select and trim
 

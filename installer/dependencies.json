@@ -1,0 +1,47 @@
+{
+  "python_version": "3.13.16",
+  "packages": [
+    {
+      "name": "Python 3.13.16",
+      "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-embed-amd64.zip",
+      "filename": "python-3.13.16-embed-amd64.zip",
+      "sha256": "97dae5274cc54867065e8d5a3226e48c35017ed332a0fdb0e27d5b5821961297",
+      "kind": "python"
+    },
+    {
+      "name": "shiboken6 6.10.2",
+      "url": "https://files.pythonhosted.org/packages/71/5d/5ca52c0ef86b3d01572131b6709bd531a080995f7e680720e9424328ce1d/shiboken6-6.10.2-cp39-abi3-win_amd64.whl",
+      "filename": "shiboken6-6.10.2-cp39-abi3-win_amd64.whl",
+      "sha256": "10f3c8c5e1b8bee779346f21c10dbc14cff068f0b0b4e62420c82a6bf36ac2e7",
+      "kind": "wheel"
+    },
+    {
+      "name": "PySide6_Essentials 6.10.2",
+      "url": "https://files.pythonhosted.org/packages/22/a8/616bbbd009efd3e17bf9a2db09d90c6764c010565cd2bdea2a240bfd18f7/pyside6_essentials-6.10.2-cp39-abi3-win_amd64.whl",
+      "filename": "pyside6_essentials-6.10.2-cp39-abi3-win_amd64.whl",
+      "sha256": "0741018c2b6395038cad4c41775cfae3f13a409e87995ac9f7d89e5b1fb6b22a",
+      "kind": "wheel"
+    },
+    {
+      "name": "PySide6_Addons 6.10.2",
+      "url": "https://files.pythonhosted.org/packages/99/13/503bec9201881968c372cb634069535e80aec2489f3907d676e151a1023f/pyside6_addons-6.10.2-cp39-abi3-win_amd64.whl",
+      "filename": "pyside6_addons-6.10.2-cp39-abi3-win_amd64.whl",
+      "sha256": "c20150068525a17494f3b6576c5d61c417cf9a5870659e29f5ebd83cd20a78ea",
+      "kind": "wheel"
+    },
+    {
+      "name": "PySide6 6.10.2",
+      "url": "https://files.pythonhosted.org/packages/4f/d4/673b8112b4a260377f760be835c4e357163fdaf68a56a1aec59aeb8e584b/pyside6-6.10.2-cp39-abi3-win_amd64.whl",
+      "filename": "pyside6-6.10.2-cp39-abi3-win_amd64.whl",
+      "sha256": "032bad6b18a17fcbf4dddd0397f49b07f8aae7f1a45b7e4de7037bf7fd6e0edf",
+      "kind": "wheel"
+    },
+    {
+      "name": "FFmpeg 9.0.2 essentials (Gyan)",
+      "url": "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-9.0.2-essentials_build.zip",
+      "filename": "ffmpeg-9.0.2-essentials_build.zip",
+      "sha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
+      "kind": "ffmpeg"
+    }
+  ]
+}

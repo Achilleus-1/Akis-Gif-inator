@@ -14,7 +14,7 @@ optional NVIDIA hardware decoding. Files stay on your computer.
 
 ![Aki's Gif-inator — a native Aero glass GIF desk](docs/images/preview.png)
 
-**[Source release 1.0.0](https://github.com/Achilleus-1/Akis-Gif-inator/releases/tag/v1.0.0)** · [User guide](docs/USER_GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changelog](CHANGELOG.md)
+**[Download Windows installer](https://github.com/Achilleus-1/Akis-Gif-inator/releases/latest)** · [User guide](docs/USER_GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changelog](CHANGELOG.md)
 
 ## What you get
 
@@ -24,23 +24,31 @@ optional NVIDIA hardware decoding. Files stay on your computer.
 - Custom palettes and smoother Sierra dithering in the higher detail presets.
 - Optional size fitting, actual file-size checks, and a trim-to-fit suggestion.
 - Optional NVIDIA NVDEC with automatic CPU fallback and truthful device/timing indicators.
+- Remembered Dark mode with dark controls, timeline, previews and glass.
 - Native OpenGL glass refraction, pointer reflections and click ripples. Still Aero fallback, with a Live glass switch and animation paused while inactive.
 - Automatically saved unique exports, an animated preview and Save a copy.
 
-## Get started
+## Install on Windows
 
-**The public release is a source ZIP, not a standalone executable.** It requires
-Python 3.12 or newer, the pinned packages, and FFmpeg/FFprobe on PATH. Windows
-10/11 x64 is the primary target. Local builds can bundle everything into one EXE.
+1. Open [Releases](https://github.com/Achilleus-1/Akis-Gif-inator/releases/latest) and download `Akis-Gif-inator-1.1.0-windows-x64-setup.exe`.
+2. Run Setup. It installs for your user account, creates a Start menu shortcut, and can add a desktop shortcut. No administrator account or manual Python commands are needed.
+3. Launch **Aki's Gif-inator** from the shortcut. Uninstall through Windows Installed apps.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe app.py
-```
+Windows 10/11 x64 is supported. Internet is required during installation: Setup
+fetches a private Python 3.13.16 runtime and pinned Qt/PySide6 wheels from
+Python.org and PyPI. It reuses FFmpeg/FFprobe on PATH, or downloads Gyan's
+FFmpeg 9.0.2 essentials build if the download task is selected. Every downloaded
+package is checked against a pinned publisher SHA-256 before extraction.
+The runtime stays inside the app folder; system Python and PATH are unchanged.
 
-With a configured environment, double-click **Start Akis Gif-inator.cmd**.
-It launches the self-contained EXE if present, otherwise the local environment.
+Once installed, conversion and playback work offline. The default install folder
+is `%LOCALAPPDATA%/Programs/Akis-Gif-inator`. GIFs go in its `exports/` folder;
+uninstall preserves user exports. Download `SHA256SUMS.txt` to verify release
+assets. The installer is currently unsigned; it does not bypass Windows security.
+
+[Installation and dependency details](docs/DISTRIBUTION.md)
+
+## Make a GIF
 
 1. Drop an MP4 or MKV, or click Choose video.
 2. Optionally drag the blue timeline handles to shorten it. Play selection checks your chosen range.
@@ -70,6 +78,13 @@ any service accepts the file. GIF uses at most 256 colors per palette and
 hundredths-of-a-second frame delays. Short clips usually retain more detail at a
 small size. [Full behavior and limits](docs/USER_GUIDE.md#quality-and-size).
 
+<details>
+<summary>Dark glass preview</summary>
+
+![Dark glass theme](docs/images/preview-dark.png)
+
+</details>
+
 ## CPU and GPU
 
 NVIDIA GPU decoding is optional and off by default. It tries CUDA device 0,
@@ -90,9 +105,23 @@ No server, browser, telemetry, account login or network request is used by the
 app. Source videos are read directly; intermediate palettes/GIFs use temporary
 storage and are removed on completion or cancellation. Full local paths are
 shown in the running app to help locate exports, but never sent anywhere.
-Pointer positions are transient and never saved. [Privacy](docs/PRIVACY.md).
+Pointer positions are transient and never saved. Your theme preference is saved locally. [Privacy](docs/PRIVACY.md).
 
-## Development and local standalone build
+## Development
+
+End users should use the installer above. To run the source, install Python
+3.12+ and FFmpeg/FFprobe, then create a local environment:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
+```
+
+The source tree contains the native app modules, `assets/`, `docs/`, `tests/`,
+`tools/`, `installer/` and `.github/workflows/`. Dependencies and release binaries
+are excluded from Git. `requirements.txt` pins developer packages;
+`installer/dependencies.json` pins installation URLs and hashes.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -100,7 +129,11 @@ Pointer positions are transient and never saved. [Privacy](docs/PRIVACY.md).
 .\.venv\Scripts\python.exe build.py
 ```
 
-The builder uses FFmpeg/FFprobe on PATH, or accepts `--ffmpeg-dir` pointing at a
+For an installer, install Inno Setup 6.6+ and run `python tools/build_installer.py`.
+The release workflow builds Setup, tests installation/export/uninstall, creates
+checksums, and publishes versioned assets on matching `v*` tags.
+
+For personal single-file builds, `build.py` uses FFmpeg/FFprobe on PATH, or accepts `--ffmpeg-dir` pointing at a
 local binary folder. It creates **Akis-Gif-inator.exe**, including its native
 interface, runtime, FFmpeg and branding. Initial extraction can take a few
 seconds. FFmpeg is not downloaded by the app or included in the Git repository.
@@ -122,7 +155,11 @@ This is independent of Apple, NVIDIA, Qt and FFmpeg. The liquid-glass appearance
 is an original native adaptation of the companion scrobbler's open-source
 visual effects; no proprietary Apple shader or artwork is included.
 
-The public 1.0.0 package contains source only. Do not redistribute a locally
-built EXE until its complete dependency notices and corresponding-source
-requirements have been met. A code license and source links alone do not
-complete a binary distribution audit. [Details](docs/DISTRIBUTION.md).
+Official releases contain a **Windows setup EXE, source ZIP and checksums**.
+Setup contains this project's source and the Inno Setup engine; Python, Qt and
+FFmpeg are obtained by the installer directly from their publishers. Their
+licenses/notices are retained in the installed runtime. FFmpeg is acknowledged
+and linked as an independent dependency, not checked into Git or rehosted inside
+our installer. A private all-in-one PyInstaller build is a different artifact
+and still needs its own dependency distribution review before redistribution.
+[Distribution details](docs/DISTRIBUTION.md).

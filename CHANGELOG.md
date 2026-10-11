@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — 2026-10-10
+
+- Add remembered Dark mode for native controls, previews, timeline and live/still glass.
+- Correct scalar OpenGL uniform binding for the animation clock and theme.
+- Add a normal per-user Windows setup EXE, shortcuts and uninstall support.
+- Download a private Python/Qt runtime and optional FFmpeg directly from publishers,
+  using pinned versions, SHA-256 verification and safe archive paths.
+- Add installation/export/uninstall CI and versioned release assets with checksums.
+- Present end-user downloads first, with source/development and dependencies documented separately.
+
 ## 1.0.0 — 2026-10-10
 
 - Establish Aki's Gif-inator as a Product of Achilleus.

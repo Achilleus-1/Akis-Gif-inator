@@ -33,6 +33,7 @@ FRAGMENT = """
 varying vec2 vUV;
 uniform vec2 uResolution;
 uniform float uTime;
+uniform float uDark;
 uniform vec3 uPointer;
 uniform vec4 uClick;
 uniform vec4 uHeader;
@@ -54,7 +55,9 @@ vec3 scene(vec2 px) {
     float second=p.y-(.74+.17*cos(p.x*5.2-t*.7));
     c=mix(c,vec3(.46,.80,.88),exp(-second*second*550.)*.24);
     c+=vec3(.15)*exp(-pow(second-.019,2.)*14000.);
-    return c;
+    vec3 night=vec3(.035,.075,.12)+c*vec3(.10,.15,.19);
+    night+=vec3(.01,.025,.04)*exp(-ribbon*ribbon*200.);
+    return mix(c,night,uDark);
 }
 float box(vec2 p,vec2 halfSize) {
     vec2 q=abs(p)-(halfSize-22.);
@@ -81,8 +84,8 @@ vec3 lens(vec3 base,vec2 screen,vec4 r,float dark) {
     vec3 c=vec3(scene(point+dispersion).r,scene(point).g,scene(point-dispersion).b);
     vec3 soft=(scene(point+vec2(3.,2.))+scene(point-vec2(3.,2.)))*.5;
     c=mix(c,soft,(1.-rim)*.32);
-    c=mix(c,vec3(.98,.995,1.),.38+(1.-rim)*.16);
-    if(dark>.5) c=mix(c,vec3(.045,.29,.43),.84);
+    c=mix(c,mix(vec3(.98,.995,1.),vec3(.055,.105,.16),uDark),.38+(1.-rim)*.16);
+    if(dark>.5) c=mix(c,mix(vec3(.045,.29,.43),vec3(.015,.065,.105),uDark),.84);
     vec2 light=normalize(uPointer.xy-(r.xy+r.zw*.5)+vec2(-180.,-230.));
     float reflection=pow(max(dot(n,light),0.),5.);
     c+=vec3(.18,.21,.23)*rim*reflection+vec3(.07,.09,.10)*hover;
@@ -109,6 +112,7 @@ class GlassRenderer:
         self.fbo = None
         self.error = ""
         self.locations = {}
+        self.dark = False
 
     def initialize(self):
         if os.environ.get("QT_QPA_PLATFORM") == "offscreen":
@@ -127,7 +131,7 @@ class GlassRenderer:
                 raise RuntimeError(self.program.log())
             if not self.program.addShaderFromSourceCode(QOpenGLShader.ShaderTypeBit.Fragment, FRAGMENT) or not self.program.link():
                 raise RuntimeError(self.program.log())
-            self.locations = {name:self.program.uniformLocation(name) for name in ("uResolution","uTime","uPointer","uClick","uHeader","uLeft","uRight","uSettings")}
+            self.locations = {name:self.program.uniformLocation(name) for name in ("uResolution","uTime","uDark","uPointer","uClick","uHeader","uLeft","uRight","uSettings")}
             self.buffer = QOpenGLBuffer(); self.buffer.create(); self.buffer.bind()
             quad = struct.pack("8f", -1, -1, 1, -1, -1, 1, 1, 1)
             self.buffer.allocate(quad, len(quad)); self.buffer.release()
@@ -154,7 +158,10 @@ class GlassRenderer:
             self.program.enableAttributeArray(position)
             self.program.setAttributeBuffer(position,0x1406,0,2)
             self.program.setUniformValue(self.locations["uResolution"],QVector2D(width,height))
-            self.program.setUniformValue(self.locations["uTime"],float(seconds))
+            # Use the float GL API directly: PySide can choose an integer
+            # setUniformValue overload for Python scalar values.
+            functions.glUniform1f(self.locations["uTime"],float(seconds))
+            functions.glUniform1f(self.locations["uDark"],1. if self.dark else 0.)
             self.program.setUniformValue(self.locations["uPointer"],QVector3D(*pointer))
             self.program.setUniformValue(self.locations["uClick"],QVector4D(*click))
             for name, rect in zip(("uHeader","uLeft","uRight","uSettings"),rectangles):
@@ -189,6 +196,7 @@ class AeroBackdrop(QWidget):
         self.frame = QImage()
         self.panels = []
         self.enabled = True
+        self.dark = False
         self.available = False
         self.started = False
         self.elapsed = 0.
@@ -198,6 +206,11 @@ class AeroBackdrop(QWidget):
         self.click_time = -100.
         self.timer = QTimer(self); self.timer.setInterval(50); self.timer.timeout.connect(self.tick)
         QApplication.instance().installEventFilter(self)
+
+    def set_dark(self, dark):
+        self.dark = bool(dark); self.renderer.dark = self.dark
+        self.frame = QImage(); self.tick(force=True); self.update()
+        for panel in self.panels: panel.update()
 
     def set_live(self, enabled):
         self.enabled = enabled
@@ -259,15 +272,17 @@ class AeroBackdrop(QWidget):
             p.drawImage(self.rect(),self.frame)
             return
         gradient = QLinearGradient(0,0,self.width(),self.height())
-        gradient.setColorAt(0,QColor("#b5e9f2")); gradient.setColorAt(.48,QColor("#e7f4fb")); gradient.setColorAt(1,QColor("#c9ede5"))
+        colors=("#102d40","#101c31","#12332e") if self.dark else ("#b5e9f2","#e7f4fb","#c9ede5")
+        gradient.setColorAt(0,QColor(colors[0])); gradient.setColorAt(.48,QColor(colors[1])); gradient.setColorAt(1,QColor(colors[2]))
         p.fillRect(self.rect(),gradient)
-        for x,y,color in ((.08,.05,"#8cd2ee"),(.97,.30,"#c8bfe9"),(.72,.91,"#a0e4bf")):
+        glows=((.08,.05,"#16465a"),(.97,.30,"#292a50"),(.72,.91,"#1c4940")) if self.dark else ((.08,.05,"#8cd2ee"),(.97,.30,"#c8bfe9"),(.72,.91,"#a0e4bf"))
+        for x,y,color in glows:
             glow = QRadialGradient(QPointF(self.width()*x,self.height()*y),max(self.width(),self.height())*.60)
             glow.setColorAt(0,QColor(color)); end=QColor(color); end.setAlpha(0); glow.setColorAt(1,end)
             p.fillRect(self.rect(),glow)
         p.setBrush(Qt.BrushStyle.NoBrush)
         for offset in (0,20,42):
-            p.setPen(QPen(QColor(255,255,255,110-offset),1.5))
+            p.setPen(QPen(QColor(150,221,240,(35 if self.dark else 110)-offset//2),1.5))
             p.drawEllipse(QRectF(self.width()*.38,self.height()*.63+offset,self.width()*.95,self.height()*.5))
 
     def close_renderer(self):
@@ -291,11 +306,13 @@ class GlassPanel(QFrame):
         gradient=QLinearGradient(rect.topLeft(),rect.bottomRight())
         if shader:
             gradient.setColorAt(0,QColor(255,255,255,18)); gradient.setColorAt(1,QColor(255,255,255,3))
+        elif self.backdrop.dark:
+            gradient.setColorAt(0,QColor(17,46,66,245)); gradient.setColorAt(1,QColor(14,29,47,235))
         elif self.dark:
             gradient.setColorAt(0,QColor("#207d9a")); gradient.setColorAt(1,QColor("#154867"))
         else:
             gradient.setColorAt(0,QColor(255,255,255,185)); gradient.setColorAt(1,QColor(240,250,255,145))
-        p.setBrush(gradient); p.setPen(QPen(QColor(255,255,255,210),1.))
+        p.setBrush(gradient); p.setPen(QPen(QColor(167,225,242,90) if self.backdrop.dark else QColor(255,255,255,210),1.))
         p.drawRoundedRect(rect,22,22)
-        p.setBrush(Qt.BrushStyle.NoBrush); p.setPen(QPen(QColor(255,255,255,95),1.))
+        p.setBrush(Qt.BrushStyle.NoBrush); p.setPen(QPen(QColor(174,230,249,30) if self.backdrop.dark else QColor(255,255,255,95),1.))
         p.drawRoundedRect(rect.adjusted(2,2,-2,-2),20,20)

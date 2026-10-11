@@ -12,7 +12,7 @@ rendering separately from headless fallback tests.
 
 For UI changes, verify playback, timeline dragging, keyboard focus, exact trim
 times, quality/fitting, GPU fallback, cancellation, previews and save dialogs.
-Maintain contrast in live and still glass modes. Avoid adding network requests
+Maintain contrast in both themes, with live and still glass. Avoid adding network requests
 or collecting pointer data. Inputs must remain untouched and partial GIFs must
 not be exposed as completed exports.
 
@@ -21,5 +21,9 @@ build outputs, private paths or personal email addresses. Use your public GitHub
 noreply address for commits if you want to keep your email private. Crop personal
 filenames from screenshots and use synthetic media in bug reports.
 
-Do not publish bundled executables until [distribution requirements](docs/DISTRIBUTION.md)
-are met. The official source packager uses an explicit file allowlist.
+Official installers use `tools/build_installer.py` and Inno Setup. Dependency
+URLs/hashes belong in the reviewed manifest; obtain hashes from publisher
+metadata and validate a clean installation before releasing. Do not embed a
+local Qt/FFmpeg build into Setup. Tag the matching source version to run the
+installer release workflow. [Distribution requirements](docs/DISTRIBUTION.md).
+The source packager keeps its separate explicit allowlist.

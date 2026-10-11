@@ -8,3 +8,7 @@
 *.png binary
 *.ico binary
 licenses/** -whitespace
+*.cs text eol=lf
+*.json text eol=lf
+*.iss text eol=lf
+*.ps1 text eol=crlf

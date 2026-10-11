@@ -5,7 +5,20 @@
 Install FFmpeg/FFprobe from a provider you trust and make both available on PATH,
 or place them in `bin/` with their required libraries. Restart the app afterwards.
 For a standalone local build, pass `build.py --ffmpeg-dir` with the binary folder.
-The app does not download codecs or run an installer for you.
+For an installed copy, rerun Setup with the FFmpeg download task selected. The running app itself does not download codecs.
+
+## Setup download or verification fails
+
+Setup requires HTTPS access to the hosts listed in `installer/dependencies.json`.
+A failed hash check aborts before installing files or shortcuts. Retry on a
+working connection; do not disable the hash check. If a publisher has replaced
+an artifact, report the package name so its version/hash can be reviewed.
+
+## Windows warns about the installer
+
+This project currently has no commercial code-signing certificate. Compare its
+SHA-256 with the published checksums and use the official GitHub Release. The
+app does not change Windows security settings. Source is available for review.
 
 ## GPU mode says CPU instead
 
